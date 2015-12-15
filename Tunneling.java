@@ -100,8 +100,8 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 	    yAxisSet.add(new Point(0,5));
             if(wavefunction != null) {
                 ArrayList<DataSet> graphList = new ArrayList<DataSet>();          
-                graphList.add(generateGraphRe(wavefunction,xArray));
-                graphList.add(generateGraphIm(wavefunction,xArray));
+                //graphList.add(generateGraphRe(wavefunction,xArray));
+                //graphList.add(generateGraphIm(wavefunction,xArray));
 		graphList.add(generateGraphAbs(wavefunction,xArray));
 		graphList.add(new DataSet(yAxisSet));
                 graphList.add(vGraph);
