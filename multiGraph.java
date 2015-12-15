@@ -117,7 +117,7 @@ public class multiGraph
 	public int getColorValue(double in, double min, double max)
     {
     	float val=(float)(Math.pow((in-min),1)/Math.pow((max-min),1));
-		Color c = Color.getHSBColor(val,1.0f,1.0f);
+		Color c = Color.getHSBColor(val,1.0f,0.75f);
 		return c.getRGB();
     }
 }

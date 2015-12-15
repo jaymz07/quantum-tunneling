@@ -26,19 +26,21 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 
     int width = 500, height = 500;
 
-    double xLower = -30.0, xUpper = 20.0, xInc = 0.05;
+    double xLower = -30.0, xUpper = 30.0, xInc = 0.1;
 
     double xcInitial = -10.0;
 
-    double barrierWidth = 1.0, barrierHeight = 0.01;
+    double barrierWidth = 10.0, barrierHeight = 1.0;
     double barrierGraphicalHeight = 5.0;
 
-    double time = 0.0, timeStep = 0.000001;
+    double time = 0.0, timeStep = 0.00001;
 
     int x0Index=-1, xaIndex=-1;
 
     Complex [] wavefunction;
     double [] xArray;
+    
+    double gaussWidth = 1.0, initFreq = 15;
 
     Complex II = new Complex(0,1);
 
@@ -89,16 +91,19 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             page = g;
             //page = iOut.getGraphics();
 
-            page.setColor(Color.BLACK);
+            page.setColor(Color.WHITE);
             page.fillRect(0,0,width,height);
 
             page.setColor(Color.GREEN);
-
+	    ArrayList<Point> yAxisSet = new ArrayList<Point>();
+	    yAxisSet.add(new Point(0,-5));
+	    yAxisSet.add(new Point(0,5));
             if(wavefunction != null) {
-                ArrayList<DataSet> graphList = new ArrayList<DataSet>();
-                graphList.add(generateGraphAbs(wavefunction,xArray));
-              //  graphList.add(generateGraphRe(wavefunction,xArray));
-              //  graphList.add(generateGraphIm(wavefunction,xArray));
+                ArrayList<DataSet> graphList = new ArrayList<DataSet>();          
+                graphList.add(generateGraphRe(wavefunction,xArray));
+                graphList.add(generateGraphIm(wavefunction,xArray));
+		graphList.add(generateGraphAbs(wavefunction,xArray));
+		graphList.add(new DataSet(yAxisSet));
                 graphList.add(vGraph);
                 multiGraph graph = new multiGraph(page, graphList, width, height);
                 graph.printGraph();
@@ -116,16 +121,13 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         double integralConj = 0;
         for (double x = xLower; x <= xUpper; x += xInc)
         {
-            Complex sum = new Complex(0,0);
-            for(double k = 0; k< 30 ; k+=0.001) {
-                sum = sum.plus(sumTerm(x,k));
-            }
+            Complex oscFunc = (new Complex(0,x*initFreq)).exp().times(envelopeFunction(x));
             if(Math.abs(x) < xInc/2)
                 x0Index = count;
             if(Math.abs(x - barrierWidth) < xInc/2)
                 xaIndex = count;
-            out.add(sum);
-            integralConj += sum.absSqr();
+            out.add(oscFunc);
+            integralConj += oscFunc.absSqr();
             count++;
         }
         integralConj *= ((double)(xUpper-xLower))/count;
@@ -135,17 +137,8 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         Complex [] outArr = out.toArray(new Complex[count]);
         return outArr;
     }
-    public Complex sumTerm(double x, double k)
-    {
-        //if (x < 0.0)
-        return new Complex(0, (x-xcInitial) * k).exp().times(aCoeff(k));
-
-
-    }
-
-    public double aCoeff(double k)
-    {
-        return Math.exp(-k * k / 10000);
+    public double envelopeFunction(double x) {
+      return Math.exp(-(x-xcInitial)*(x-xcInitial)/gaussWidth/gaussWidth);
     }
     public double [] potentialFunction(double [] x) {
         double [] out = new double[x.length];
