@@ -30,7 +30,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 
     double xcInitial = -10.0;
 
-    double barrierWidth = 10.0, barrierHeight = 1.0;
+    double barrierWidth = 10.0, barrierHeight = 1.0	;
     double barrierGraphicalHeight = 5.0;
 
     double time = 0.0, timeStep = 0.00001;
