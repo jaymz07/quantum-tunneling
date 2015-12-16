@@ -31,7 +31,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     double barrierGraphicalHeight = 0.05;
     
     //Timestep Settings
-    double time = 0.0, timeStep = 0.0001;
+    double time = 0.0, timeStep = 0.00002;
     double gaussWidth = 0.5, initFreq = 30;
     
     //Physics constants
