@@ -17,33 +17,37 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 public class Tunneling implements MouseListener, MouseMotionListener, KeyListener {
+    
+  //-------------------Main Program Parameters-----------------------
+    //Window settings
+    int width = 500, height = 500;
+    
+    //X axis settings
+    double xLower = -10.0, xUpper = 10.0, xInc = 0.05;
+    double xcInitial = -2.0;
 
+    //Barrier Settings
+    double barrierWidth = 0.2, barrierHeight = 5;
+    double barrierGraphicalHeight = 0.05;
+    
+    //Timestep Settings
+    double time = 0.0, timeStep = 0.0001;
+    double gaussWidth = 0.5, initFreq = 30;
+    
+    //Physics constants
+    double mass = 100, hbar = 1;
+    
+    //------------------Some global constants-----------
+    Complex [] wavefunction, EtoV;
+    Complex II = new Complex(0,1);
+    Complex alpha, beta;
+    double [] xArray;
+    double epsilon;
+    int x0Index = -1, xaIndex = -1;
+    
     JFrame frame;
     DrawPanel drawPanel;
-
-
     Graphics page;
-
-    int width = 500, height = 500;
-
-    double xLower = -30.0, xUpper = 30.0, xInc = 0.1;
-
-    double xcInitial = -10.0;
-
-    double barrierWidth = 10.0, barrierHeight = 1.0	;
-    double barrierGraphicalHeight = 5.0;
-
-    double time = 0.0, timeStep = 0.00001;
-
-    int x0Index=-1, xaIndex=-1;
-
-    Complex [] wavefunction;
-    double [] xArray;
-    
-    double gaussWidth = 1.0, initFreq = 15;
-
-    Complex II = new Complex(0,1);
-
     DataSet vGraph;
 
     public void run() {
@@ -70,14 +74,14 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         frame.addMouseMotionListener( this );
         frame.addKeyListener ( this ) ;
 
-        wavefunction = makeWavepacket();
-        xArray = makeDomain();
+        makeWavepacket();
 
-        vGraph = new DataSet(xArray,potentialFunction(xArray));
+        vGraph = new DataSet(xArray,potentialFunctionGraphical(xArray));
 
         while( true ) {
             frame.repaint();
-            wavefunction = evolveTimeStep(wavefunction,xArray,timeStep);
+            //wavefunction = evolveTimeStepRK3(wavefunction,xArray,timeStep);
+	    wavefunction = step(wavefunction);
             time+= timeStep;
         }
     }
@@ -95,15 +99,15 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             page.fillRect(0,0,width,height);
 
             page.setColor(Color.GREEN);
-	    ArrayList<Point> yAxisSet = new ArrayList<Point>();
-	    yAxisSet.add(new Point(0,-5));
-	    yAxisSet.add(new Point(0,5));
+            ArrayList<Point> yAxisSet = new ArrayList<Point>();
+            yAxisSet.add(new Point(0,-barrierGraphicalHeight/3));
+            yAxisSet.add(new Point(0,barrierGraphicalHeight*1.25));
             if(wavefunction != null) {
-                ArrayList<DataSet> graphList = new ArrayList<DataSet>();          
+                ArrayList<DataSet> graphList = new ArrayList<DataSet>();
                 //graphList.add(generateGraphRe(wavefunction,xArray));
                 //graphList.add(generateGraphIm(wavefunction,xArray));
-		graphList.add(generateGraphAbs(wavefunction,xArray));
-		graphList.add(new DataSet(yAxisSet));
+                graphList.add(generateGraphAbs(wavefunction,xArray));
+                graphList.add(new DataSet(yAxisSet));
                 graphList.add(vGraph);
                 multiGraph graph = new multiGraph(page, graphList, width, height);
                 graph.printGraph();
@@ -111,36 +115,46 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 
         }
     }
-    
+
 //------Initial Data---------------
-    
-    public Complex [] makeWavepacket()
+
+    public void makeWavepacket()
     {
-        ArrayList<Complex> out = new ArrayList<Complex>();
+        ArrayList<Complex> psi = new ArrayList<Complex>();
         int count =0;
         double integralConj = 0;
         for (double x = xLower; x <= xUpper; x += xInc)
         {
-            Complex oscFunc = (new Complex(0,x*initFreq)).exp().times(envelopeFunction(x));
             if(Math.abs(x) < xInc/2)
                 x0Index = count;
             if(Math.abs(x - barrierWidth) < xInc/2)
                 xaIndex = count;
-            out.add(oscFunc);
+	    Complex oscFunc = (new Complex(0,x*initFreq)).exp();
+            psi.add(oscFunc.times(envelopeFunction(x)));
             integralConj += oscFunc.absSqr();
             count++;
         }
         integralConj *= ((double)(xUpper-xLower))/count;
+	EtoV = new Complex[count];
+	xArray = new double[count];
+	//timeStep = 0.8 * xInc * xInc / hbar;
+	epsilon = hbar*timeStep/(mass * xInc * xInc);
+	alpha = new Complex(0.5 * (1.0+Math.cos(epsilon/2)) , -0.5 * Math.sin(epsilon/2));
+	beta  = new Complex((Math.sin(epsilon/4))*Math.sin(epsilon/4), 0.5 * Math.sin(epsilon/2));
         for(int i =0; i< count; i++) {
-            out.set(i,out.get(i).times(1.0/Math.sqrt(integralConj)));
+	    xArray[i] = xLower + xInc*i;
+            psi.set(i,psi.get(i).times(1.0/Math.sqrt(integralConj)));
+	    double r = potentialFunction(xArray[i]) * timeStep /hbar;
+	    EtoV[i] = new Complex(0,-r).exp();
+            //out.set(i,new Complex(0,0));
         }
-        Complex [] outArr = out.toArray(new Complex[count]);
-        return outArr;
+        wavefunction = psi.toArray(new Complex[count]);
     }
+    
     public double envelopeFunction(double x) {
-      return Math.exp(-(x-xcInitial)*(x-xcInitial)/gaussWidth/gaussWidth);
+        return Math.exp(-(x-xcInitial)*(x-xcInitial)/gaussWidth/gaussWidth);
     }
-    public double [] potentialFunction(double [] x) {
+    public double [] potentialFunctionGraphical(double [] x) {
         double [] out = new double[x.length];
         for(int i =0; i<x.length; i++) {
             if(x[i]>0 && x[i] < barrierWidth)
@@ -150,38 +164,24 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         }
         return out;
     }
-    public double [] makeDomain()
-    {
-        ArrayList<Double> out = new ArrayList<Double>();
-        int count =0;
-        for (double x = xLower; x <= xUpper; x += xInc)
-        {
-            out.add(x);
-            count++;
-        }
-        double [] primitives = new double[out.size()];
-        for(int i =0; i<out.size(); i++)
-            primitives[i]=out.get(i);
-        return primitives;
+    public double potentialFunction(double x) {
+        return (x>0 && x < barrierWidth) ? barrierHeight : 0;
     }
-
+    
 //---------Time evolution-----------
 
-    public Complex [] evolveTimeStep(Complex [] psi, double [] x, double tStep) {
+    public Complex [] evolveTimeStepRK3(Complex [] psi, double [] x, double tStep) {
         int n = psi.length;
         Complex [] k1 = computeK(psi,x,0.0);
-	
+
         //linear step:
         //return addArraysWithFactor(psi,k1,1.0*tStep);
-	//Runge-Kutta 3rd Order:
+        //Runge-Kutta 3rd Order:
         Complex [] k2 = computeK( addArraysWithFactor(psi, k1, 0.5*tStep), x, tStep/2 );
         Complex [] k3 = computeK( addArraysWithFactor(psi, k2, 0.5*tStep), x, tStep/2 );
         Complex [][] sum = {psi, arrayTimesFactor(k1,1.0/6*tStep), arrayTimesFactor(k2,2.0/3*tStep), arrayTimesFactor(k3,1.0/6*tStep) };
         return sumArrays(sum);
-        
     }
-
-
     public Complex [] computeK(Complex [] psi, double [] x, double tStep) {
 
         int n = psi.length;
@@ -195,10 +195,96 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             else if(i > x0Index && i < xaIndex)
                 potential = barrierHeight;
             Complex laplacian = (psi[i+1].minus(psi[i].times(2.0)).plus(psi[i-1])).times(1.0/xInc/xInc);
-            Complex partialT = II.times(0.5).times(laplacian).minus(II.times(potential));
+            Complex partialT = II.times(0.5*hbar/mass).times(laplacian.times(1.0/hbar)).plus(-potential);
             out[i] = partialT;
         }
         return out;
+    }
+    
+//----------Richardson algorithm----------------
+    
+    public Complex [] step(Complex [] psi) {
+        Complex x = new Complex(0,0);
+        Complex y = new Complex(0,0);
+        Complex w = new Complex(0,0);
+        Complex z = new Complex(0,0);
+	
+	int nx = psi.length;
+        /*
+         * The time stepping algorithm used here is described in:
+         *
+         * Richardson, John L.,
+         * Visualizing quantum scattering on the CM-2 supercomputer,
+         * Computer Physics Communications 63 (1991) pp 84-94
+         */
+
+        for(int i=0; i<nx-1; i+=2) {
+            x.set(psi[i]);
+            y.set(psi[i+1]);
+            w.mult(alpha,x);
+            z.mult(beta,y);
+            psi[i+0].add(w,z);
+            w.mult(alpha,y);
+            z.mult(beta,x);
+            psi[i+1].add(w,z);
+        }
+
+        for(int i=1; i<nx-1; i+=2) {
+            x.set(psi[i]);
+            y.set(psi[i+1]);
+            w.mult(alpha,x);
+            z.mult(beta,y);
+            psi[i+0].add(w,z);
+            w.mult(alpha,y);
+            z.mult(beta,x);
+            psi[i+1].add(w,z);
+        }
+
+        x.set(psi[nx-1]);
+        y.set(psi[0]);
+        w.mult(alpha,x);
+        z.mult(beta,y);
+        psi[nx-1].add(w,z);
+        w.mult(alpha,y);
+        z.mult(beta,x);
+        psi[0   ].add(w,z);
+
+        for(int i=0; i<nx; i++) {
+            x.set(psi[i]);
+            psi[i].mult(x,EtoV[i]);
+        }
+
+        x.set(psi[nx-1]);
+        y.set(psi[0]);
+        w.mult(alpha,x);
+        z.mult(beta,y);
+        psi[nx-1].add(w,z);
+        w.mult(alpha,y);
+        z.mult(beta,x);
+        psi[0   ].add(w,z);
+
+        for(int i=1; i<nx-1; i+=2) {
+            x.set(psi[i]);
+            y.set(psi[i+1]);
+            w.mult(alpha,x);
+            z.mult(beta,y);
+            psi[i+0].add(w,z);
+            w.mult(alpha,y);
+            z.mult(beta,x);
+            psi[i+1].add(w,z);
+        }
+
+        for(int i=0; i<nx-1; i+=2) {
+            x.set(psi[i]);
+            y.set(psi[i+1]);
+            w.mult(alpha,x);
+            z.mult(beta,y);
+            psi[i+0].add(w,z);
+            w.mult(alpha,y);
+            z.mult(beta,x);
+            psi[i+1].add(w,z);
+        }
+        return psi;
     }
 
 //----------Array Helper methods------------------------
@@ -219,11 +305,11 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     public Complex [] sumArrays(Complex [][] arr) {
         Complex [] sum = new Complex[arr[0].length];
         for(int i = 0; i<arr[0].length; i++) {
-	  Complex sumI = new Complex(0,0);
-	  for(int j=0;j<arr.length; j++)
-            sumI= sumI.plus(arr[j][i]);
-	  sum[i] = sumI;
-	}
+            Complex sumI = new Complex(0,0);
+            for(int j=0; j<arr.length; j++)
+                sumI= sumI.plus(arr[j][i]);
+            sum[i] = sumI;
+        }
         return sum;
     }
 

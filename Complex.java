@@ -18,6 +18,7 @@ public class Complex
 		re=r;
 		im=i;
 	}
+	//---------Inline Math functions---------------------
 	public Complex plus(Complex b)
 	{
 		return new Complex(re+b.re,im+b.im);
@@ -73,6 +74,21 @@ public class Complex
 	public Complex cos()
 	{
 		return ((new Complex(0,1)).times(this)).exp().plus(((new Complex(0,-1)).times(this)).exp()).times(.5);
+	}
+	
+	//-------------Modifier Math functions----------------
+	
+	public void set(Complex a) {
+		re=a.re;
+		im=a.im;
+	}
+	public void add(Complex a, Complex b) {
+		re = a.re + b.re;
+		im = a.im + b.im;
+	}
+	public void mult(Complex a, Complex b) {
+		re = a.re*b.re - a.im*b.im;
+		im = a.re*b.im + a.im*b.re;
 	}
 }
 
