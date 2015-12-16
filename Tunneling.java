@@ -34,11 +34,13 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     double barrierWidth = 0.2, barrierHeight = 5;
     double barrierGraphicalHeight = 0.5;
     
-    //Timestep Settings
-    double time = 0.0, timeStep = 0.000005;
-    
     //Physics constants
     double mass = 100, hbar = 1;
+    
+    //Integration Settings
+    double time = 0.0, timeStep = 0.000005;
+    IntegrationMode stepMode = IntegrationMode.RK3;
+    
     
     //------------------Some global constants-----------
     Complex [] wavefunction, EtoV;
@@ -52,6 +54,10 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     DrawPanel drawPanel;
     Graphics page;
     DataSet vGraph;
+    
+    public enum IntegrationMode{	
+      FEULER,RK3,RICHARDSON
+    }
 
     public void run() {
 
@@ -83,8 +89,18 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 
         while( true ) {
             frame.repaint();
-            //wavefunction = evolveTimeStepRK3(wavefunction,xArray,timeStep);
-	    wavefunction = step(wavefunction);
+	    
+	    switch(stepMode) {
+	      case FEULER:
+		wavefunction = linearStep(wavefunction,xArray,timeStep);
+	      case RK3:
+		wavefunction = evolveTimeStepRK3(wavefunction,xArray,timeStep);
+		break;
+	      case RICHARDSON:
+		wavefunction = step(wavefunction);
+		break;
+	    }
+	    
             time+= timeStep;
         }
     }
@@ -178,14 +194,18 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     public Complex [] evolveTimeStepRK3(Complex [] psi, double [] x, double tStep) {
         int n = psi.length;
         Complex [] k1 = computeK(psi,x,0.0);
-
-        //linear step:
-        //return addArraysWithFactor(psi,k1,1.0*tStep);
+	
         //Runge-Kutta 3rd Order:
         Complex [] k2 = computeK( addArraysWithFactor(psi, k1, 0.5*tStep), x, tStep/2 );
         Complex [] k3 = computeK( addArraysWithFactor(psi, k2, 0.5*tStep), x, tStep/2 );
         Complex [][] sum = {psi, arrayTimesFactor(k1,1.0/6*tStep), arrayTimesFactor(k2,2.0/3*tStep), arrayTimesFactor(k3,1.0/6*tStep) };
         return sumArrays(sum);
+    }
+    public Complex [] linearStep(Complex [] psi, double [] x, double tStep) {
+        int n = psi.length;
+        Complex [] k1 = computeK(psi,x,0.0);
+
+        return addArraysWithFactor(psi,k1,1.0*tStep);
     }
     public Complex [] computeK(Complex [] psi, double [] x, double tStep) {
 
@@ -200,7 +220,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             else if(i > x0Index && i < xaIndex)
                 potential = barrierHeight;
             Complex laplacian = (psi[i+1].minus(psi[i].times(2.0)).plus(psi[i-1])).times(1.0/xInc/xInc);
-            Complex partialT = II.times(0.5*hbar/mass).times(laplacian.times(1.0/hbar)).plus(-potential);
+            Complex partialT = II.times(0.5*hbar/mass).times(laplacian.times(1.0/hbar)).plus(psi[i].times(-potential));
             out[i] = partialT;
         }
         return out;
