@@ -21,18 +21,21 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
   //-------------------Main Program Parameters-----------------------
     //Window settings
     int width = 500, height = 500;
+    boolean showImag = false, showReal = false;
     
     //X axis settings
-    double xLower = -10.0, xUpper = 10.0, xInc = 0.05;
+    double xLower = -5.0, xUpper = 5.0, xInc = 0.02;
     double xcInitial = -2.0;
+    
+    //Pulse Settings
+    double gaussWidth = 0.5, initFreq = 30;
 
     //Barrier Settings
     double barrierWidth = 0.2, barrierHeight = 5;
-    double barrierGraphicalHeight = 0.05;
+    double barrierGraphicalHeight = 0.5;
     
     //Timestep Settings
-    double time = 0.0, timeStep = 0.00002;
-    double gaussWidth = 0.5, initFreq = 30;
+    double time = 0.0, timeStep = 0.000005;
     
     //Physics constants
     double mass = 100, hbar = 1;
@@ -104,8 +107,10 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             yAxisSet.add(new Point(0,barrierGraphicalHeight*1.25));
             if(wavefunction != null) {
                 ArrayList<DataSet> graphList = new ArrayList<DataSet>();
-                //graphList.add(generateGraphRe(wavefunction,xArray));
-                //graphList.add(generateGraphIm(wavefunction,xArray));
+		if(showReal)
+		  graphList.add(generateGraphRe(wavefunction,xArray));
+		if(showImag)
+		  graphList.add(generateGraphIm(wavefunction,xArray));
                 graphList.add(generateGraphAbs(wavefunction,xArray));
                 graphList.add(new DataSet(yAxisSet));
                 graphList.add(vGraph);

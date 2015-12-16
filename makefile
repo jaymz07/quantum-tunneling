@@ -13,7 +13,7 @@ default: classes jar permissions
 classes: $(CLASSES:.java=.class)
 
 clean:
-	$(RM) *.class
+	$(RM) *.class *.jar
 
 jar: Tunneling.class
 	jar cvfe Tunneling.jar Tunneling *.class
