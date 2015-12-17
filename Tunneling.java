@@ -24,21 +24,21 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     boolean showImag = false, showReal = false;
     
     //X axis settings
-    double xLower = -7.0, xUpper = 5.0, xInc = 0.02;
+    double xLower = -7.0, xUpper = 5.0, dX_Base = 0.04;
     double xcInitial = -2.0;
     
     //Pulse Settings
     double gaussWidth = 0.6, initFreq = 50;
 
     //Barrier Settings
-    double barrierWidth = 0.75, barrierHeight = 5.0;
+    double barrierWidth = 0.75;
     double barrierGraphicalHeight = 0.08;
     
     //Physics constants
     double mass = 100, hbar = 1;
     
     //Integration Settings
-    double time = 0.0, timeStepBase = 0.0001;
+    double time = 0.0, timeStepBase = 0.0002;
     IntegrationMode stepMode = IntegrationMode.RICHARDSON;
     
   //----------------------Some global constants-----------------------
@@ -50,9 +50,11 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     Complex II = new Complex(0,1);
     Complex alpha, beta;
     double [] xArray;
-    double epsilon, timeStep;
+    double epsilon, timeStep,  xInc = dX_Base/6;
     int x0Index = -1, xaIndex = -1;
     boolean reset = false;
+    double barrierHeight;
+    
     
     JFrame frame;
     DrawPanel drawPanel;
@@ -62,9 +64,6 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     ControlPanel controlPanel;
 
     public void run() {
-
-
-
 
         /*---------Make window-----------*/
         frame = new JFrame("Tunneling Demo");
@@ -93,8 +92,11 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         frame.addKeyListener ( this ) ;
 
 	timeStep=timeStepBase/5;
+	barrierHeight = initFreq*initFreq/2/mass*50.0/100*2;
 	
         makeWavepacket();
+	
+	//System.out.println("Wavfunction Energy = " + computeWavefunctionEnergy(wavefunction));
 
         vGraph = new DataSet(xArray,potentialFunctionGraphical(xArray));
 
@@ -122,8 +124,8 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         }
     }
 
-    /*--------Nested class defining object to be painted to screen.-------
-    	  Simply overrides paintComponent() originally defined in JPanel*/
+    /*----------------Nested class defining object to be painted to screen.--------------------
+    	  Simply overrides paintComponent() defined in JPanel*/
     class DrawPanel extends JPanel {
 
         //Overrides method defined in JPanel superclass. Called when repaint() is called from frame.
@@ -135,17 +137,31 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             page.fillRect(0,0,width,height);
 
             page.setColor(Color.GREEN);
-            ArrayList<Point> yAxisSet = new ArrayList<Point>();
-            yAxisSet.add(new Point(0,-barrierGraphicalHeight/3));
-            yAxisSet.add(new Point(0,barrierGraphicalHeight*1.25));
+	    
+	    //Generate graphs of all Data Sets
             if(wavefunction != null) {
-                ArrayList<DataSet> graphList = new ArrayList<DataSet>();
+                
+		ArrayList<DataSet> graphList = new ArrayList<DataSet>();
+		
+		//Set y axis bounds by using phony graph
+		ArrayList<Point> yAxisSet = new ArrayList<Point>();
+		yAxisSet.add(new Point(0,barrierGraphicalHeight*1.25));
+		if(showImag || showReal)
+		  yAxisSet.add(new Point(0,-barrierGraphicalHeight*1.25));
+		else
+		  yAxisSet.add(new Point(0,-barrierGraphicalHeight/3));
+		graphList.add(new DataSet(yAxisSet));
+		
+		//graph of psi squared
+		DataSet psiSquaredGraph = generateGraphAbs(wavefunction,xArray);
+		//psiSquaredGraph.pSize = 2;
+		graphList.add(psiSquaredGraph);
+		
 		if(showReal)
 		  graphList.add(generateGraphRe(wavefunction,xArray));
 		if(showImag)
 		  graphList.add(generateGraphIm(wavefunction,xArray));
-                graphList.add(generateGraphAbs(wavefunction,xArray));
-                graphList.add(new DataSet(yAxisSet));
+		
                 graphList.add(vGraph);
                 multiGraph graph = new multiGraph(page, graphList, width, height);
                 graph.printGraph();
@@ -181,10 +197,11 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 	beta  = new Complex((Math.sin(epsilon/4))*Math.sin(epsilon/4), 0.5 * Math.sin(epsilon/2));
         for(int i =0; i< count; i++) {
 	    xArray[i] = xLower + xInc*i;
+	    //Normalize wavefunction:
             psi.set(i,psi.get(i).times(1.0/Math.sqrt(integralConj)));
-	    double r = potentialFunction(xArray[i]) * timeStep / hbar;
+	    //For time independent potentials:
+	    double r = potentialFunction(xArray[i],0.0) * timeStep / hbar;
 	    EtoV[i] = new Complex(0,-r).exp();
-            //out.set(i,new Complex(0,0));
         }
         wavefunction = psi.toArray(new Complex[count]);
     }
@@ -202,8 +219,18 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         }
         return out;
     }
-    public double potentialFunction(double x) {
+    public double potentialFunction(double x, double t) {
         return (x>0 && x < barrierWidth) ? barrierHeight : 0;
+    }
+    
+    public Complex computeWavefunctionEnergy(Complex [] psi) {
+      int n=wavefunction.length;
+      Complex sum = new Complex(0,0);
+      for(int i =1;i<n-1;i++) {
+	Complex laplacian = (psi[i+1].minus(psi[i].times(2.0)).plus(psi[i-1])).times(1.0/xInc/xInc);
+	sum.add(laplacian,sum);
+      }
+      return sum.times( xInc );
     }
     
 //---------Time evolution-----------
@@ -231,7 +258,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         out[0]   = new Complex(0,0);
         out[n-1] = new Complex(0,0);
         for(int i =1; i< n-1; i++) {
-            double potential = potentialFunction(x[i]);
+            double potential = potentialFunction(x[i],time+tStep);
             Complex laplacian = (psi[i+1].minus(psi[i].times(2.0)).plus(psi[i-1])).times(1.0/xInc/xInc);
             Complex partialT = II.times(0.5*hbar/mass).times(laplacian.times(1.0/hbar)).plus(psi[i].times(-potential));
             out[i] = partialT;
@@ -367,7 +394,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         ArrayList<Point> out = new ArrayList<Point>();
         int n = psi.length;
         for(int i =0; i< n; i++) {
-            out.add(new Point(x[i], psi[i].im));
+            out.add(new Point(x[i], psi[i].im*psi[i].im*Math.signum(psi[i].im)));
         }
         return new DataSet(out);
     }
@@ -376,7 +403,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         ArrayList<Point> out = new ArrayList<Point>();
         int n = psi.length;
         for(int i =0; i< n; i++) {
-            out.add(new Point(x[i], psi[i].re));
+            out.add(new Point(x[i], psi[i].re*psi[i].re*Math.signum(psi[i].re)));
         }
         return new DataSet(out);
     }
@@ -431,7 +458,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         }
     }
     
-    //-------------------------------------Defines Control Window------------------------------------------------------
+    //-------------------------------------Defines Control Window in a nested class------------------------------------------------------
     
     public class ControlPanel extends Frame implements WindowListener, ActionListener, ChangeListener, ItemListener {
         public ControlPanel(String title) {
@@ -451,32 +478,36 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             }
             add(buttonPanel);
 
-            //---------make checkboxes--------------
-            ArrayList<JCheckBox> cBoxes = new ArrayList<JCheckBox>();
-	    JPanel cPanel = new JPanel(new GridLayout(0,1));
-            cBoxes.add(new JCheckBox("Real Part"));
-            cBoxes.get(cBoxes.size()-1).setName("Real Part");
-	    cBoxes.add(new JCheckBox("Imag Part"));
-            cBoxes.get(cBoxes.size()-1).setName("Imag Part");
-            for(JCheckBox b : cBoxes) {
+            //---------Make View checkboxes--------------
+            ArrayList<JCheckBox> vcBoxes = new ArrayList<JCheckBox>();
+	    JPanel vcPanel = new JPanel(new GridLayout(0,1));
+	    vcPanel.add(new JLabel("View Controls"));
+            vcBoxes.add(new JCheckBox("Real Part"));
+            vcBoxes.get(vcBoxes.size()-1).setName("Real Part");
+	    vcBoxes.add(new JCheckBox("Imag Part"));
+            vcBoxes.get(vcBoxes.size()-1).setName("Imag Part");
+            for(JCheckBox b : vcBoxes) {
                 b.addItemListener(this);
-                cPanel.add(b);
+                vcPanel.add(b);
             }
-            add(cPanel);
+            add(vcPanel);
 
             //----------Make sliders---------------
             ArrayList<LabelSlider> sliders = new ArrayList<LabelSlider>();
 	    
-            sliders.add(new LabelSlider("Timestep",JSlider.VERTICAL,1,10,5));
+            sliders.add(new LabelSlider("Timestep",JSlider.HORIZONTAL,1,10,5));
+	    sliders.add(new LabelSlider("dX",JSlider.HORIZONTAL,1,10,5));
+	    sliders.add(new LabelSlider("Barrier Energy",JSlider.HORIZONTAL,0,100,50));
 	    
-            JPanel sliderPanel = new JPanel(new GridLayout(1,0));
+            JPanel sliderPanel = new JPanel(new GridLayout(0,1));
             for(LabelSlider s : sliders) {
-                s.addChangeListener(this);
-                sliderPanel.add(s);
-                JLabel label = new JLabel(s.label,JLabel.CENTER);
+		JLabel label = new JLabel(s.label,JLabel.CENTER);
                 label.setAlignmentX(s.getAlignmentX());
                 label.setAlignmentY(Component.BOTTOM_ALIGNMENT);
                 sliderPanel.add(label);
+                
+                sliderPanel.add(s);
+		s.addChangeListener(this);
             }
             add(sliderPanel);
         }
@@ -506,8 +537,18 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         public void stateChanged(ChangeEvent e) {
             LabelSlider source = (LabelSlider)e.getSource();
             if (!source.getValueIsAdjusting()) {
-                if(source.label.equals("Timestep"))
+                if(source.label.equals("Timestep")) {
                     timeStep = timeStepBase/(11 - (int)source.getValue());
+		    reset = true;
+		}
+		if(source.label.equals("dX")) {
+                    xInc = dX_Base/(11 - (int)source.getValue());
+		    reset = true;
+		}
+		if(source.label.equals("Barrier Energy")) {
+                    barrierHeight = initFreq*initFreq/2/mass*((int)source.getValue())/100*2;
+		    reset = true;
+		}
             }
             System.out.println(source.label + " = " + (int)source.getValue());
             frame.repaint();
