@@ -59,7 +59,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     JFrame frame;
     DrawPanel drawPanel;
     Graphics page;
-    DataSet vGraph;
+    ArrayList<Point> vGraph;
     
     ControlPanel controlPanel;
 
@@ -100,7 +100,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 	
 	//System.out.println("Wavfunction Energy = " + computeWavefunctionEnergy(wavefunction));
 
-        vGraph = new DataSet(xArray,potentialFunctionGraphical(xArray));
+        vGraph = potentialFunctionGraphical(xArray);
 
         while( true ) {
             frame.repaint();
@@ -143,19 +143,10 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 	    //Generate graphs of all Data Sets
             if(wavefunction != null) {
                 
-		ArrayList<DataSet> graphList = new ArrayList<DataSet>();
-		
-		//Set y axis bounds by using phony graph
-		ArrayList<Point> yAxisSet = new ArrayList<Point>();
-		yAxisSet.add(new Point(0,barrierGraphicalHeight*1.25));
-		if(showImag || showReal)
-		  yAxisSet.add(new Point(0,-barrierGraphicalHeight*1.25));
-		else
-		  yAxisSet.add(new Point(0,-barrierGraphicalHeight/3));
-		graphList.add(new DataSet(yAxisSet));
+		ArrayList<ArrayList<Point>> graphList = new ArrayList<ArrayList<Point>>();
 		
 		//graph of psi squared
-		DataSet psiSquaredGraph = generateGraphAbs(wavefunction,xArray);
+		ArrayList<Point> psiSquaredGraph = generateGraphAbs(wavefunction,xArray);
 		//psiSquaredGraph.pSize = 2;
 		graphList.add(psiSquaredGraph);
 		
@@ -165,7 +156,11 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 		  graphList.add(generateGraphIm(wavefunction,xArray));
 		
                 graphList.add(vGraph);
-                multiGraph graph = new multiGraph(page, graphList, width, height);
+                multiGraph graph = (new multiGraph(page, graphList, width, height)).setMaxY(barrierGraphicalHeight*1.25);
+		if(showImag || showReal)
+		  graph.setMinY(-barrierGraphicalHeight*1.25);
+		else
+		  graph.setMinY(-barrierGraphicalHeight/3);
                 graph.printGraph();
             }
 
@@ -211,13 +206,13 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     public double envelopeFunction(double x) {
         return Math.exp(-(x-xcInitial)*(x-xcInitial)/gaussWidth/gaussWidth);
     }
-    public double [] potentialFunctionGraphical(double [] x) {
-        double [] out = new double[x.length];
+    public ArrayList<Point> potentialFunctionGraphical(double [] x) {
+        ArrayList<Point> out = new ArrayList<Point>(x.length);
         for(int i =0; i<x.length; i++) {
             if(x[i]>0 && x[i] < barrierWidth)
-                out[i]=barrierGraphicalHeight;
+                out.set(i,new Point(x[i],barrierGraphicalHeight));
             else
-                out[i] = 0.0;
+                out.set(i,new Point(x[i],0));
         }
         return out;
     }
@@ -382,32 +377,32 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 
 //---------Generate Display points------------
 
-    public DataSet generateGraphAbs(Complex [] psi, double [] x)
+    public ArrayList<Point> generateGraphAbs(Complex [] psi, double [] x)
     {
         ArrayList<Point> out = new ArrayList<Point>();
         int n = psi.length;
         for(int i =0; i< n; i++) {
             out.add(new Point(x[i], psi[i].absSqr()));
         }
-        return new DataSet(out);
+        return out;
     }
-    public DataSet generateGraphIm(Complex [] psi, double [] x)
+    public ArrayList<Point> generateGraphIm(Complex [] psi, double [] x)
     {
         ArrayList<Point> out = new ArrayList<Point>();
         int n = psi.length;
         for(int i =0; i< n; i++) {
             out.add(new Point(x[i], psi[i].im*psi[i].im*Math.signum(psi[i].im)));
         }
-        return new DataSet(out);
+        return out;
     }
-    public DataSet generateGraphRe(Complex [] psi, double [] x)
+    public ArrayList<Point> generateGraphRe(Complex [] psi, double [] x)
     {
         ArrayList<Point> out = new ArrayList<Point>();
         int n = psi.length;
         for(int i =0; i< n; i++) {
             out.add(new Point(x[i], psi[i].re*psi[i].re*Math.signum(psi[i].re)));
         }
-        return new DataSet(out);
+        return out;
     }
 
 
@@ -567,7 +562,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             else {
 	      if(source.label.equals("Barrier Width")) {
                     barrierWidth = barrierWidth_base*((int)source.getValue())/100;
-		    vGraph = new DataSet(xArray,potentialFunctionGraphical(xArray));
+		    vGraph = potentialFunctionGraphical(xArray);
 		    reset = true;
 		}
 	      if(source.label.equals("Pulse Momentum")) {
