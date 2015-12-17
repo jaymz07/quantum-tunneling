@@ -144,24 +144,34 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             if(wavefunction != null) {
                 
 		ArrayList<ArrayList<Point>> graphList = new ArrayList<ArrayList<Point>>();
+		ArrayList<Integer> graphSizes = new ArrayList<Integer>();
 		
 		//graph of psi squared
 		ArrayList<Point> psiSquaredGraph = generateGraphAbs(wavefunction,xArray);
 		//psiSquaredGraph.pSize = 2;
 		graphList.add(psiSquaredGraph);
 		
-		if(showReal)
+		graphSizes.add(1);
+		if(showReal) {
 		  graphList.add(generateGraphRe(wavefunction,xArray));
-		if(showImag)
+		  graphSizes.set(0,2);
+		  graphSizes.add(1);
+		}
+		if(showImag) {
 		  graphList.add(generateGraphIm(wavefunction,xArray));
+		  graphSizes.set(0,2);
+		  graphSizes.add(1);
+		}
 		
                 graphList.add(vGraph);
+		graphSizes.add(1);
                 multiGraph graph = (new multiGraph(page, graphList, width, height));
 		graph.maxY = (barrierGraphicalHeight*1.25);
 		if(showImag || showReal)
 		  graph.minY = (-barrierGraphicalHeight*1.25);
 		else
 		  graph.minY = (-barrierGraphicalHeight/3);
+		graph.pointSizes=graphSizes;
                 graph.printGraph();
             }
 

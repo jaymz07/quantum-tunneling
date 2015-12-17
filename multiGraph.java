@@ -98,11 +98,14 @@ public class multiGraph
             //	page.setColor(new Color(255-255/sPoints.size()*(i+1),0,255/sPoints.size()*(i+1)));
             page.setColor(new Color(getColorValue(i,0,sPoints.size())));
             int x=(int)sPoints.get(i).get(0).getX(), y=(int)sPoints.get(i).get(0).getY();
+	    if(pointSizes != null)
+		  pSize = pointSizes.get(i);
 
-            for(Point p : sPoints.get(i))
+            for(int j =0; j<sPoints.get(i).size(); j++)
             {
-
-                page.fillRect((int)p.getX(),(int)p.getY(),pSize,pSize);
+		Point p = sPoints.get(i).get(j);
+		if(pSize>1)
+		  page.fillRect((int)p.getX()-pSize/2,(int)p.getY()-pSize/2,pSize,pSize);
                 page.drawLine(x,y,(int)p.getX(),(int)p.getY());
                 x=(int)p.getX();
                 y=(int)p.getY();
@@ -126,12 +129,10 @@ public class multiGraph
     }
 
     private void setPlotParams() {
-
         rangeX=maxX-minX;
         rangeY=maxY-minY;
         ppuY=(WIDTH)/(rangeX);
         ppuX=(HEIGHT)/(rangeY);
-
     }
 
     public Point scrPoint(Point p)
