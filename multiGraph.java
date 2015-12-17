@@ -40,28 +40,34 @@ public class multiGraph
         setPlotParams();
     }
     //------------Object builder patterns-------------
-    public multiGraph setMaxX(double maxX) {
-        this.maxX = maxX;
+    public multiGraph setMaxX(double max_X) {
+        maxX = max_X;
+	sPoints = null;
         return this;
     }
-    public multiGraph setMaxY(double maxX) {
-        this.maxY = maxY;
+    public multiGraph setMaxY(double max_Y) {
+        maxY = max_Y;
+	sPoints = null;
         return this;
     }
-    public multiGraph setMinX(double maxX) {
-        this.minX = minX;
+    public multiGraph setMinX(double min_X) {
+        minX = min_X;
+	sPoints = null;
         return this;
     }
-    public multiGraph setMinY(double maxX) {
-        this.minY = minY;
+    public multiGraph setMinY(double min_Y) {
+        minY = min_Y;
+	sPoints = null;
         return this;
     }
     public multiGraph setColors(ArrayList<Color> colors) {
         this.colors = colors;
+	sPoints = null;
         return this;
     }
     public multiGraph setSizes(ArrayList<Integer> pointSizes) {
         this.pointSizes = pointSizes;
+	sPoints = null;
         return this;
     }
 
@@ -82,6 +88,8 @@ public class multiGraph
     {
         if(sPoints == null)
             generateScreenPoints();
+	else
+	    setPlotParams();
         page.setColor(Color.WHITE);
         //	page.fillRect(0,0,WIDTH,HEIGHT);
         //page.setColor(color);

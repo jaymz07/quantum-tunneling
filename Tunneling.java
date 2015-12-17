@@ -156,11 +156,12 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 		  graphList.add(generateGraphIm(wavefunction,xArray));
 		
                 graphList.add(vGraph);
-                multiGraph graph = (new multiGraph(page, graphList, width, height)).setMaxY(barrierGraphicalHeight*1.25);
+                multiGraph graph = (new multiGraph(page, graphList, width, height));
+		graph.maxY = (barrierGraphicalHeight*1.25);
 		if(showImag || showReal)
-		  graph.setMinY(-barrierGraphicalHeight*1.25);
+		  graph.minY = (-barrierGraphicalHeight*1.25);
 		else
-		  graph.setMinY(-barrierGraphicalHeight/3);
+		  graph.minY = (-barrierGraphicalHeight/3);
                 graph.printGraph();
             }
 
@@ -207,12 +208,12 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         return Math.exp(-(x-xcInitial)*(x-xcInitial)/gaussWidth/gaussWidth);
     }
     public ArrayList<Point> potentialFunctionGraphical(double [] x) {
-        ArrayList<Point> out = new ArrayList<Point>(x.length);
+        ArrayList<Point> out = new ArrayList<Point>();
         for(int i =0; i<x.length; i++) {
             if(x[i]>0 && x[i] < barrierWidth)
-                out.set(i,new Point(x[i],barrierGraphicalHeight));
+                out.add(new Point(x[i],barrierGraphicalHeight));
             else
-                out.set(i,new Point(x[i],0));
+                out.add(new Point(x[i],0));
         }
         return out;
     }
