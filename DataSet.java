@@ -10,6 +10,11 @@ public class DataSet
 	{
 		data =a;
 	}
+	public DataSet(Point [] a) {
+	    data = new ArrayList<Point>();
+	    for(Point p : a)
+	      data.add(p);
+	}
 	public DataSet(double [] xpoints, double [] ypoints) {
 	  for(int i=0;i< xpoints.length; i++)
 	    data.add(new Point(xpoints[i],ypoints[i]));

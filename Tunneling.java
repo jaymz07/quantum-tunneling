@@ -28,11 +28,11 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     double xcInitial = -2.0;
     
     //Pulse Settings
-    double gaussWidth = 0.6, initFreq = 50;
+    double gaussWidth = 0.6, pulseMomentum = 100;
 
     //Barrier Settings
-    double barrierWidth = 0.75;
-    double barrierGraphicalHeight = 0.08;
+    double barrierWidth_base = 0.75;
+    double barrierGraphicalHeight = 0.09;
     
     //Physics constants
     double mass = 100, hbar = 1;
@@ -53,7 +53,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     double epsilon, timeStep,  xInc = dX_Base/6;
     int x0Index = -1, xaIndex = -1;
     boolean reset = false;
-    double barrierHeight;
+    double barrierHeight, barrierWidth, initFreq;
     
     
     JFrame frame;
@@ -92,6 +92,8 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         frame.addKeyListener ( this ) ;
 
 	timeStep=timeStepBase/5;
+	barrierWidth  = barrierWidth_base*0.5;
+	initFreq = pulseMomentum*50/100;
 	barrierHeight = initFreq*initFreq/2/mass*50.0/100*2;
 	
         makeWavepacket();
@@ -495,9 +497,21 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             //----------Make sliders---------------
             ArrayList<LabelSlider> sliders = new ArrayList<LabelSlider>();
 	    
-            sliders.add(new LabelSlider("Timestep",JSlider.HORIZONTAL,1,10,5));
-	    sliders.add(new LabelSlider("dX",JSlider.HORIZONTAL,1,10,5));
-	    sliders.add(new LabelSlider("Barrier Energy",JSlider.HORIZONTAL,0,100,50));
+            sliders.add(	new LabelSlider("Timestep",JSlider.HORIZONTAL,1,10,5));
+	    sliders.add(	new LabelSlider("dX",JSlider.HORIZONTAL,1,10,5));
+	    LabelSlider b_en  = new LabelSlider("Barrier Energy",JSlider.HORIZONTAL,0,100,50);
+	    
+	    //Set labels for barrier energy
+	    Hashtable labeltable = new Hashtable();
+	    labeltable.put(new Integer(0), new JLabel("0"));
+	    labeltable.put(new Integer(50), new JLabel("E"));
+	    labeltable.put(new Integer(100), new JLabel("2E"));
+	    b_en.setLabelTable(labeltable);
+	    b_en.setPaintLabels(true);
+	    sliders.add(b_en);
+	    
+	    sliders.add(	new LabelSlider("Barrier Width",JSlider.HORIZONTAL,1,100,50));
+	    sliders.add(	new LabelSlider("Pulse Momentum",JSlider.HORIZONTAL,10,100,30));
 	    
             JPanel sliderPanel = new JPanel(new GridLayout(0,1));
             for(LabelSlider s : sliders) {
@@ -550,6 +564,19 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 		    reset = true;
 		}
             }
+            else {
+	      if(source.label.equals("Barrier Width")) {
+                    barrierWidth = barrierWidth_base*((int)source.getValue())/100;
+		    vGraph = new DataSet(xArray,potentialFunctionGraphical(xArray));
+		    reset = true;
+		}
+	      if(source.label.equals("Pulse Momentum")) {
+		    barrierHeight /= initFreq*initFreq;
+                    initFreq = pulseMomentum*((int)source.getValue())/100;
+		    barrierHeight *= initFreq*initFreq;
+		    reset = true;
+		}
+	    }
             System.out.println(source.label + " = " + (int)source.getValue());
             frame.repaint();
         }

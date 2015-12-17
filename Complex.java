@@ -31,7 +31,7 @@ public class Complex
 	{
 	      return new Complex(re - b.re, im - b.im);
 	}
-	public Complex minux(double b)
+	public Complex minus(double b)
 	{
 		return new Complex(re-b,im);
 	}
