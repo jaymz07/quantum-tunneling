@@ -1,8 +1,4 @@
-/* Java Program for generating analog X,Y signals for a laser projector using the analog soundcard output.
- * Drawing on graphical window reflects the laser output.
- * This class defines a window, gets some points from mouse input and passes these points to a seperate
- * thread defined by LaserOutputThread.java, which handles all audio output.
- */
+//Java Time-Dependent schrodinger equation sover for gaussian pulse encountering a tunnel barrier
 
 import java.awt.*;
 import java.awt.event.*;
@@ -92,7 +88,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
         frame.addKeyListener ( this ) ;
 
 	timeStep=timeStepBase/5;
-	barrierWidth  = barrierWidth_base*0.5;
+	barrierWidth  = barrierWidth_base*0.2;
 	initFreq = pulseMomentum*50/100;
 	barrierHeight = initFreq*initFreq/2/mass*50.0/100*2;
 	
@@ -516,7 +512,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 	    b_en.setPaintLabels(true);
 	    sliders.add(b_en);
 	    
-	    sliders.add(	new LabelSlider("Barrier Width",JSlider.HORIZONTAL,1,100,50));
+	    sliders.add(	new LabelSlider("Barrier Width",JSlider.HORIZONTAL,1,100,20));
 	    sliders.add(	new LabelSlider("Pulse Momentum",JSlider.HORIZONTAL,10,100,30));
 	    
             JPanel sliderPanel = new JPanel(new GridLayout(0,1));
