@@ -55,7 +55,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     JFrame frame;
     DrawPanel drawPanel;
     Graphics page;
-    ArrayList<Point> vGraph;
+    Graph vGraph;
     
     ControlPanel controlPanel;
 
@@ -139,36 +139,30 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 	    //Generate graphs of all Data Sets
             if(wavefunction != null) {
                 
-		ArrayList<ArrayList<Point>> graphList = new ArrayList<ArrayList<Point>>();
-		ArrayList<Integer> graphSizes = new ArrayList<Integer>();
+		ArrayList<Graph> graphList = new ArrayList<Graph>();
 		
 		//graph of psi squared
-		ArrayList<Point> psiSquaredGraph = generateGraphAbs(wavefunction,xArray);
-		//psiSquaredGraph.pSize = 2;
+		Graph psiSquaredGraph = (generateGraphAbs(wavefunction,xArray)).setTitle("Psi Squared");
+		
+		if(showReal)
+		  graphList.add(generateGraphRe(wavefunction,xArray).setTitle("Real Part"));
+		if(showImag)
+		  graphList.add(generateGraphIm(wavefunction,xArray).setTitle("Imag. Part"));
+		
+		if(showReal || showImag)
+		  psiSquaredGraph.setPointSize(2);
 		graphList.add(psiSquaredGraph);
 		
-		graphSizes.add(1);
-		if(showReal) {
-		  graphList.add(generateGraphRe(wavefunction,xArray));
-		  graphSizes.set(0,2);
-		  graphSizes.add(1);
-		}
-		if(showImag) {
-		  graphList.add(generateGraphIm(wavefunction,xArray));
-		  graphSizes.set(0,2);
-		  graphSizes.add(1);
-		}
-		
                 graphList.add(vGraph);
-		graphSizes.add(1);
-                multiGraph graph = (new multiGraph(page, graphList, width, height));
-		graph.maxY = (barrierGraphicalHeight*1.25);
+                MultiGraph graph = (new MultiGraph(graphList));
+		graph.setMaxY(barrierGraphicalHeight*1.25);
 		if(showImag || showReal)
-		  graph.minY = (-barrierGraphicalHeight*1.25);
+		  graph.setMinY(-barrierGraphicalHeight*1.25);
 		else
-		  graph.minY = (-barrierGraphicalHeight/3);
-		graph.pointSizes=graphSizes;
-                graph.printGraph();
+		  graph.setMinY(-barrierGraphicalHeight/3);
+		graph.showXTicks=false;
+		graph.showYTicks=false;
+                graph.printGraph(page, width, height);
             }
 
         }
@@ -213,7 +207,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
     public double envelopeFunction(double x) {
         return Math.exp(-(x-xcInitial)*(x-xcInitial)/gaussWidth/gaussWidth);
     }
-    public ArrayList<Point> potentialFunctionGraphical(double [] x) {
+    public Graph potentialFunctionGraphical(double [] x) {
         ArrayList<Point> out = new ArrayList<Point>();
         for(int i =0; i<x.length; i++) {
             if(x[i]>0 && x[i] < barrierWidth)
@@ -221,7 +215,7 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
             else
                 out.add(new Point(x[i],0));
         }
-        return out;
+        return (new Graph(out)).setTitle("Potential");
     }
     public double potentialFunction(double x, double t) {
         return (x>0 && x < barrierWidth) ? barrierHeight : 0;
@@ -384,32 +378,32 @@ public class Tunneling implements MouseListener, MouseMotionListener, KeyListene
 
 //---------Generate Display points------------
 
-    public ArrayList<Point> generateGraphAbs(Complex [] psi, double [] x)
+    public Graph generateGraphAbs(Complex [] psi, double [] x)
     {
         ArrayList<Point> out = new ArrayList<Point>();
         int n = psi.length;
         for(int i =0; i< n; i++) {
             out.add(new Point(x[i], psi[i].absSqr()));
         }
-        return out;
+        return new Graph(out);
     }
-    public ArrayList<Point> generateGraphIm(Complex [] psi, double [] x)
+    public Graph generateGraphIm(Complex [] psi, double [] x)
     {
         ArrayList<Point> out = new ArrayList<Point>();
         int n = psi.length;
         for(int i =0; i< n; i++) {
             out.add(new Point(x[i], psi[i].im*psi[i].im*Math.signum(psi[i].im)));
         }
-        return out;
+        return new Graph(out);
     }
-    public ArrayList<Point> generateGraphRe(Complex [] psi, double [] x)
+    public Graph generateGraphRe(Complex [] psi, double [] x)
     {
         ArrayList<Point> out = new ArrayList<Point>();
         int n = psi.length;
         for(int i =0; i< n; i++) {
             out.add(new Point(x[i], psi[i].re*psi[i].re*Math.signum(psi[i].re)));
         }
-        return out;
+        return new Graph(out);
     }
 
 
